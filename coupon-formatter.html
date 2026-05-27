@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Coupon Formatter</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0 0 32px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    }
+
+    .wrapper {
+      width: min(100%, 920px);
+      padding: 24px;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: -0.03em;
+    }
+
+    p {
+      margin: 0 0 16px;
+      line-height: 1.7;
+      color: #475569;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    .field {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #0f172a;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      font: inherit;
+      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      padding: 14px 16px;
+      background: #f8fafc;
+      color: #0f172a;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+      background: #ffffff;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: flex-start;
+      margin-bottom: 28px;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: #4f46e5;
+      color: #fff;
+      box-shadow: 0 12px 18px rgba(79, 70, 229, 0.18);
+    }
+
+    .secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .output-panel {
+      display: grid;
+      gap: 18px;
+    }
+
+    .output-block {
+      padding: 18px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+
+    .output-block h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .output-content {
+      min-height: 120px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      line-height: 1.7;
+      color: #0f172a;
+    }
+
+    .note {
+      font-size: 0.92rem;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      color: #334155;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .badge span {
+      background: #eef2ff;
+      color: #4338ca;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 640px) {
+      .wrapper {
+        padding: 16px;
+      }
+
+      .button-row {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <h1>クーポン整形ツール</h1>
+      <p>AliExpressなどのバラバラなクーポン情報から、WordPress用HTMLを自動生成します。URLを入力すると、すべてのクーポンコードに同じリンクを付けます。</p>
+    </header>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="field">
+          <label for="sourceText">クーポン情報を貼り付け</label>
+          <textarea id="sourceText" placeholder="3,000円以上購入で\n320円オフ\nコード: JPMB02\n\n15$購入で2$オフ：AFFSS2\n..."></textarea>
+        </div>
+
+        <div class="field">
+          <label for="linkUrl">リンクURL</label>
+          <input id="linkUrl" type="url" placeholder="https://example.com" />
+          <div class="note">ここに入力したURLが、すべてのコードリンクに適用されます。</div>
+        </div>
+
+        <div class="button-row">
+          <button class="primary" id="formatButton">整形して表示</button>
+          <button class="secondary" id="copyHtmlButton">WordPress用HTMLをコピー</button>
+          <button class="secondary" id="copyRankingButton">割引率トップ3をコピー</button>
+        </div>
+
+        <div class="status" id="statusText">入力した情報を整形して、出力とランキングを作成します。</div>
+      </div>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-block">
+        <h2>WordPress用HTML</h2>
+        <div class="output-content" id="htmlOutput"></div>
+      </div>
+
+      <div class="output-block">
+        <h2>割引率トップ3</h2>
+        <div class="output-content" id="rankingOutput"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sourceText = document.getElementById('sourceText');
+    const linkUrl = document.getElementById('linkUrl');
+    const formatButton = document.getElementById('formatButton');
+    const copyHtmlButton = document.getElementById('copyHtmlButton');
+    const copyRankingButton = document.getElementById('copyRankingButton');
+    const htmlOutput = document.getElementById('htmlOutput');
+    const rankingOutput = document.getElementById('rankingOutput');
+    const statusText = document.getElementById('statusText');
+
+    function normalizeText(text) {
+      return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+    }
+
+    function parseBlocks(raw) {
+      const normalized = normalizeText(raw);
+      if (!normalized) {
+        return [];
+      }
+
+      let blocks = normalized.split(/\n{2,}/).map(block => block.trim()).filter(Boolean);
+      if (blocks.length === 1) {
+        const lines = blocks[0].split('\n').map(line => line.trim()).filter(Boolean);
+        if (lines.length > 3) {
+          const chunks = [];
+          let current = [];
+          for (const line of lines) {
+            current.push(line);
+            if (/\b(?:コード|code)[:：]?\s*[A-Za-z0-9-_]+$/i.test(line) || /[:：]\s*[A-Za-z0-9-_]+$/.test(line)) {
+              chunks.push(current.join('\n'));
+              current = [];
+            }
+          }
+          if (current.length) {
+            chunks.push(current.join('\n'));
+          }
+          if (chunks.length > 1) {
+            blocks = chunks;
+          }
+        }
+      }
+
+      return blocks;
+    }
+
+    function parseCoupon(block) {
+      const text = block.replace(/　/g, ' ');
+      const purchaseMatch = text.match(/([0-9,]+(?:\.[0-9]+)?)\s*(円|\$)\s*(?:以上購入で|購入で|購入以上|以上)?/i);
+      const discountMatch = text.match(/([0-9,]+(?:\.[0-9]+)?)\s*(円|\$)\s*オフ/i);
+      const codeMatch = text.match(/(?:コード|code)\s*[:：]?\s*([A-Za-z0-9-_]+)/i)
+        || text.match(/[:：]\s*([A-Za-z0-9-_]+)\s*$/)
+        || text.match(/^([A-Za-z0-9-_]{2,})$/m);
+
+      const purchaseValue = purchaseMatch ? parseFloat(purchaseMatch[1].replace(/,/g, '')) : null;
+      const purchaseUnit = purchaseMatch ? purchaseMatch[2] : null;
+      const discountValue = discountMatch ? parseFloat(discountMatch[1].replace(/,/g, '')) : null;
+      const discountUnit = discountMatch ? discountMatch[2] : null;
+      let code = codeMatch ? codeMatch[1].trim() : null;
+
+      if (!code) {
+        const fallbackCode = text.match(/\b([A-Za-z0-9-_]{4,})\b/);
+        if (fallbackCode) {
+          code = fallbackCode[1];
+        }
+      }
+
+      const unit = purchaseUnit || discountUnit || '$';
+      const purchase = purchaseValue;
+      const discount = discountValue;
+
+      if (!purchase || !discount || !code) {
+        return null;
+      }
+
+      const currency = unit === '円' ? 'JPY' : '$';
+      return {
+        raw: text,
+        purchase,
+        discount,
+        code,
+        currency,
+        unit,
+        rate: discount / purchase,
+      };
+    }
+
+    function formatAmount(value, unit) {
+      if (unit === '円') {
+        return `${value.toLocaleString('ja-JP')}円`;
+      }
+      return `${value}${unit}`;
+    }
+
+    function buildHtml(coupons, url) {
+      if (!coupons.length) return '';
+      const lines = coupons.map(item => {
+        const purchaseText = item.currency === 'JPY'
+          ? `${item.purchase.toLocaleString('ja-JP')}円購入で`
+          : `${item.purchase}${item.unit}購入で`;
+        const discountText = item.currency === 'JPY'
+          ? `${item.discount.toLocaleString('ja-JP')}円オフ`
+          : `${item.discount}${item.unit}オフ`;
+        const link = url ? ` href="${escapeHtml(url)}"` : '';
+        return `${purchaseText}${discountText}：<strong><a${link} target="_blank" rel="nofollow sponsored noopener">${escapeHtml(item.code)}</a></strong><br>`;
+      });
+      return lines.join('\n');
+    }
+
+    function buildRanking(coupons) {
+      const top = coupons.slice(0, 3);
+      if (!top.length) return '';
+      return top.map((item, index) => {
+        const medal = ['🥇', '🥈', '🥉'][index] || '🔹';
+        const percent = (item.rate * 100).toFixed(2);
+        const purchaseText = item.currency === 'JPY'
+          ? `${item.purchase.toLocaleString('ja-JP')}円購入で`
+          : `${item.purchase}${item.unit}購入で`;
+        const discountText = item.currency === 'JPY'
+          ? `${item.discount.toLocaleString('ja-JP')}円オフ`
+          : `${item.discount}${item.unit}オフ`;
+        return `${medal}${percent}％：${purchaseText}${discountText}：${item.code}`;
+      }).join('\n');
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"]+/g, match => {
+        const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+        return escapeMap[match] || match;
+      });
+    }
+
+    function compareCoupons(a, b) {
+      if (a.currency === b.currency) {
+        return a.purchase - b.purchase;
+      }
+      if (a.currency === 'JPY' && b.currency !== 'JPY') {
+        return -1;
+      }
+      if (a.currency !== 'JPY' && b.currency === 'JPY') {
+        return 1;
+      }
+      return a.purchase - b.purchase;
+    }
+
+    function parseAll(raw) {
+      const blocks = parseBlocks(raw);
+      const coupons = blocks.map(parseCoupon).filter(Boolean);
+      return coupons;
+    }
+
+    function updateOutput() {
+      const raw = sourceText.value;
+      const url = linkUrl.value.trim();
+      const coupons = parseAll(raw);
+
+      if (!raw.trim()) {
+        htmlOutput.textContent = '';
+        rankingOutput.textContent = '';
+        statusText.textContent = 'クーポン情報を入力してください。';
+        return;
+      }
+
+      if (!coupons.length) {
+        htmlOutput.textContent = '有効なクーポン情報が見つかりませんでした。\n「購入条件」「割引額」「コード」を含む入力を確認してください。';
+        rankingOutput.textContent = '';
+        statusText.textContent = '解析できませんでした。入力を確認してください。';
+        return;
+      }
+
+      coupons.sort(compareCoupons);
+      const ranking = [...coupons].sort((a, b) => b.rate - a.rate);
+      const html = buildHtml(coupons, url);
+      const rankingText = buildRanking(ranking);
+
+      htmlOutput.textContent = html;
+      rankingOutput.textContent = rankingText;
+
+      statusText.textContent = `クーポン ${coupons.length} 件を整形しました。`; 
+    }
+
+    function copyText(value, label) {
+      if (!value) {
+        statusText.textContent = `${label} の内容がありません。`; 
+        return;
+      }
+      navigator.clipboard.writeText(value).then(() => {
+        statusText.textContent = `${label} をクリップボードにコピーしました。`;
+      }).catch(() => {
+        statusText.textContent = 'コピーに失敗しました。ブラウザの権限を確認してください。';
+      });
+    }
+
+    formatButton.addEventListener('click', updateOutput);
+
+    copyHtmlButton.addEventListener('click', () => {
+      const html = htmlOutput.textContent.trim();
+      copyText(html, 'WordPress用HTML');
+    });
+
+    copyRankingButton.addEventListener('click', () => {
+      const rankingText = rankingOutput.textContent.trim();
+      copyText(rankingText, '割引率トップ3');
+    });
+
+    sourceText.addEventListener('input', () => {
+      statusText.textContent = '入力が更新されました。整形ボタンを押してください。';
+    });
+
+    linkUrl.addEventListener('input', () => {
+      statusText.textContent = 'リンクURLが更新されました。整形ボタンを押してください。';
+    });
+  </script>
+</body>
+</html>
